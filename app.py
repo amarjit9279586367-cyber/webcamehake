@@ -21,6 +21,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+# ===== YEH LINE APP = Flask(name) KE NIECHE DAALEIN =====
+app.pending_broadcast = {}
 app.config.from_object(Config)
 
 BOT_TOKEN = Config.BOT_TOKEN
