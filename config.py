@@ -8,7 +8,7 @@ class Config:
     
     # ——— Web App URL (your Render domain) ———
     # Render पर deploy करने के बाद यह अपने-आप set हो जाएगा
-    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    BASE_URL = os.environ.get("BASE_URL", "https://webcamehake.onrender.com/health")
     
     # ——— Bot Webhook Path ———
     WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"  # Secret path, कोई और hit न करे
