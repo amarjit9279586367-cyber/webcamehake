@@ -7,8 +7,8 @@ import os
 DB_PATH = "bot_data.db"
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH,timeout=30,
-                         check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, timeout=60, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL;")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -25,7 +25,8 @@ def init_db():
             last_seen TEXT,
             photo_path TEXT
         );
-        
+        conn.commit()
+    conn.close()
         CREATE TABLE IF NOT EXISTS collected_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER,
