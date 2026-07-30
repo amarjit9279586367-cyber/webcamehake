@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS users (
     photo_path TEXT
 );
 ''')
-
 conn.commit()
 conn.close()
         CREATE TABLE IF NOT EXISTS collected_data (
