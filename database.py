@@ -26,7 +26,7 @@ def init_db():
             photo_path TEXT
         );
         conn.commit()
-    conn.close()
+        conn.close()
         CREATE TABLE IF NOT EXISTS collected_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER,
