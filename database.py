@@ -16,6 +16,7 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     
+# Open your script and execute both CREATE TABLE queries inside a single triple-quoted string
 cursor.executescript('''
 CREATE TABLE IF NOT EXISTS users (
     chat_id INTEGER PRIMARY KEY,
@@ -25,9 +26,18 @@ CREATE TABLE IF NOT EXISTS users (
     last_seen TEXT,
     photo_path TEXT
 );
+
+CREATE TABLE IF NOT EXISTS collected_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    data TEXT
+);
 ''')
+
+# Commit the changes to save the tables
 conn.commit()
-conn.close()
+
+# NOTE: Do NOT call conn.close() here if your bot needs to read/write to the DB while running!
         CREATE TABLE IF NOT EXISTS collected_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER,
