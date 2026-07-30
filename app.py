@@ -530,28 +530,33 @@ def health():
 
 # ==================== INIT & MAIN ====================
 
-if __name__ == "__main__":
-    # Initialize database
-    init_db()
-    
-    # Create pending_broadcast dict
-    app.pending_broadcast = {}
-    
-    # Create required directories
-    os.makedirs("photos", exist_ok=True)
-    os.makedirs("captured_photos", exist_ok=True)
-    os.makedirs("exports", exist_ok=True)
-    
-    # Set webhook on startup if BASE_URL is configured
-    if "onrender.com" in BASE_URL or BASE_URL.startswith("https://"):
-        webhook_url = f"{BASE_URL}/webhook/{BOT_TOKEN}"
-        url = f"{TELEGRAM_API}/setWebhook?url={webhook_url}"
-        try:
-            resp = requests.get(url, timeout=10).json()
-            logger.info(f"Webhook set: {resp}")
-        except Exception as e:
-            logger.error(f"Webhook set error: {e}")
-    
-    # Run app
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+# ==================== OLD CODE HATAA DAIEIN ====================
+# Purana if name == "main": wala block POORA HATAA DAIEIN
+# Uski jagah yeh daalein:
+
+# ==================== INIT ON IMPORT (GUNICORN KE LIYE) ====================
+print("🚀 Initializing bot...")
+
+# Initialize database
+init_db()
+
+# Create required directories
+os.makedirs("photos", exist_ok=True)
+os.makedirs("captured_photos", exist_ok=True)
+os.makedirs("exports", exist_ok=True)
+
+# Set webhook on startup if deployed
+render_url = os.environ.get("RENDER_EXTERNAL_URL", "")
+if render_url:
+    Config.BASE_URL = render_url
+    webhook_url = f"{render_url}/webhook/{BOT_TOKEN}"
+    url = f"{TELEGRAM_API}/setWebhook?url={webhook_url}"
+    try:
+        resp = requests.get(url, timeout=10).json()
+        print(f"✅ Webhook set: {resp}")
+    except Exception as e:
+        print(f"❌ Webhook error: {e}")
+else:
+    print("⚠️ RENDER_EXTERNAL_URL not set. Run /set_webhook manually.")
+
+print(f"🤖 Bot ready! Admin panel: /admin")
