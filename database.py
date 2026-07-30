@@ -16,17 +16,19 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     
-    c.executescript('''
-        CREATE TABLE IF NOT EXISTS users (
-            chat_id INTEGER PRIMARY KEY,
-            username TEXT,
-            first_name TEXT,
-            first_seen TEXT,
-            last_seen TEXT,
-            photo_path TEXT
-        );
-        conn.commit()
-        conn.close()
+cursor.executescript('''
+CREATE TABLE IF NOT EXISTS users (
+    chat_id INTEGER PRIMARY KEY,
+    username TEXT,
+    first_name TEXT,
+    first_seen TEXT,
+    last_seen TEXT,
+    photo_path TEXT
+);
+''')
+
+conn.commit()
+conn.close()
         CREATE TABLE IF NOT EXISTS collected_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER,
